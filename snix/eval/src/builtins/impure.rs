@@ -1,5 +1,6 @@
 use builtin_macros::builtins;
 use genawaiter::rc::Gen;
+use std::borrow::Cow;
 
 use std::{
     env,
@@ -17,14 +18,17 @@ use crate::{
 #[builtins]
 mod impure_builtins {
     use std::ffi::OsStr;
-    use std::os::unix::ffi::OsStrExt;
 
     use super::*;
     use crate::builtins::{coerce_value_to_path, hash::hash_nix_string};
+    use os_str_bytes::OsStrBytes;
 
     #[builtin("getEnv")]
     async fn builtin_get_env(co: GenCo, var: Value) -> Result<Value, ErrorKind> {
-        Ok(env::var(OsStr::from_bytes(&var.to_str()?))
+        let var_string = var.to_str()?;
+        let var_bytes = var_string.as_bytes();
+        let var_os: Cow<'_, OsStr> = OsStr::assert_from_raw_bytes(var_bytes);
+        Ok(env::var(var_os)
             .unwrap_or_else(|_| "".into())
             .into())
     }

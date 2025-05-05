@@ -19,9 +19,7 @@ use std::{
     io,
     path::{Path, PathBuf},
 };
-
-#[cfg(all(target_family = "unix", feature = "impure"))]
-use std::os::unix::ffi::OsStringExt;
+use os_str_bytes::OsStringBytes;
 
 #[cfg(feature = "impure")]
 use std::fs::File;
@@ -163,8 +161,9 @@ impl EvalIO for StdIO {
             } else {
                 FileType::Unknown
             };
+            let raw: Vec<u8> = entry.file_name().into_raw_vec();
 
-            result.push((entry.file_name().into_vec().into(), val))
+            result.push((raw.into(), val));
         }
 
         Ok(result)

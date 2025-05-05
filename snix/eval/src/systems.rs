@@ -1,7 +1,7 @@
 /// true iff the argument is recognized by cppnix as the second
 /// coordinate of a "nix double"
 fn is_second_coordinate(x: &str) -> bool {
-    matches!(x, "linux" | "darwin" | "netbsd" | "openbsd" | "freebsd")
+    matches!(x, "linux" | "darwin" | "netbsd" | "openbsd" | "freebsd" | "windows")
 }
 
 /// This function takes an llvm triple (which may have three or four
@@ -346,6 +346,16 @@ mod tests {
         assert_eq!(
             llvm_triple_to_nix_double("thumbv7neon-unknown-linux-musleabihf"),
             "thumbv7neon-linux"
+        );
+
+        assert_eq!(
+            llvm_triple_to_nix_double("x86_64-pc-windows-msvc"),
+            "x86_64-windows"
+        );
+
+        assert_eq!(
+            llvm_triple_to_nix_double("aarch64-pc-windows-msvc"),
+            "aarch64-windows"
         );
     }
 }
