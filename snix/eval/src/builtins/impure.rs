@@ -22,7 +22,7 @@ mod impure_builtins {
     use super::*;
     use crate::builtins::{coerce_value_to_path, hash::hash_nix_string};
     use os_str_bytes::OsStrBytes;
-
+    use bstr::ByteSlice;
     #[builtin("getEnv")]
     async fn builtin_get_env(co: GenCo, var: Value) -> Result<Value, ErrorKind> {
         let var_string = var.to_str()?;
@@ -95,6 +95,46 @@ mod impure_builtins {
                     .await
                     .to_string(),
             )),
+        }
+    }
+
+    #[builtin("nushell")]
+     async fn builtin_nushell(co: GenCo, nuscript: Value) -> Result<Value, ErrorKind> {
+        use embed_nu::nu_protocol;
+        match nuscript {
+            Value::String(s) => {
+                let mut ctx = embed_nu::Context::builder()
+                    .with_command_groups(embed_nu::CommandGroupConfig::default().all_groups(true))
+                    .unwrap()
+                    .add_parent_env_vars()
+                    .build()
+                    .unwrap();
+
+                let pipeline = ctx
+                    .eval_raw(s.to_str().unwrap(), embed_nu::PipelineData::empty())
+                    .unwrap();
+
+                let result = pipeline.into_value(nu_protocol::Span::unknown()).unwrap();
+
+                let output_string = match result {
+                    nu_protocol::Value::Int { val, .. } => val.to_string(),
+                    nu_protocol::Value::Float { val, .. } => val.to_string(),
+                    nu_protocol::Value::Bool { val, .. } => val.to_string(),
+                    nu_protocol::Value::String { val, .. } => val,
+                    nu_protocol::Value::List { vals, .. } => vals
+                        .into_iter()
+                        .map(|v| v.into_string().unwrap_or("<err>".into()))
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                    other => other.into_string().unwrap_or("<unknown>".into()),
+                };
+
+                Ok(Value::String(NixString::from(output_string)))
+            }
+            _ => Err(ErrorKind::TypeError {
+                expected: "string",
+                actual: "not string",
+            }),
         }
     }
 }

@@ -7,6 +7,7 @@ edition = "2021"
 name = "snix_eval"
 
 [dependencies]
+embed-nu = { git = "https://github.com/Rucadi/embed-nu", package = "embed-nu" }
 builtin-macros = { path = "./builtin-macros", package = "snix-eval-builtin-macros" }
 bytes.workspace = true
 bstr = { workspace = true, features = ["serde"] }
