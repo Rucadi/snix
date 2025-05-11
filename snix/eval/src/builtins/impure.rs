@@ -117,14 +117,9 @@ mod impure_builtins {
                 for (key, value) in env::vars() {
                     envars.insert(key, value);
                 }
-
-                let path = match coerce_value_to_path(&co, Value::from("./.")).await? {
-                    Err(cek) => return Ok(Value::Catchable(Box::new(cek))),
-                    Ok(path) => path,
-                };
-                // set PWD envar to path
-                envars.insert("PWD".to_string(), path.to_str().unwrap().to_string());
-
+        
+                // set PWD envar to path using the current directory to ensure that both Linux and Windows have it
+                envars.insert("PWD".to_string(), env::current_dir().unwrap().to_str().unwrap().to_string());
                 let serde_val = nu_json_api_rs::evaluate_command(s.to_str().unwrap(), envars);
                 let val: Value = from_json_nix_string(Value::from(serde_val.to_string()))?;
                 Ok(val)
