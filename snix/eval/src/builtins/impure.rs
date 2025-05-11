@@ -1,6 +1,7 @@
 use builtin_macros::builtins;
 use genawaiter::rc::Gen;
 use std::borrow::Cow;
+use nu_json_api_rs::{ evaluate_command, eval_result_to_json};
 
 use std::{
     env,
@@ -18,6 +19,8 @@ use crate::{
 #[builtins]
 mod impure_builtins {
     use std::ffi::OsStr;
+    use std::collections::HashMap;
+
 
     use super::*;
     use crate::builtins::{coerce_value_to_path, hash::hash_nix_string};
@@ -100,36 +103,23 @@ mod impure_builtins {
 
     #[builtin("nushell")]
      async fn builtin_nushell(co: GenCo, nuscript: Value) -> Result<Value, ErrorKind> {
-        use embed_nu::nu_protocol;
         match nuscript {
             Value::String(s) => {
-                let mut ctx = embed_nu::Context::builder()
-                    .with_command_groups(embed_nu::CommandGroupConfig::default().all_groups(true))
-                    .unwrap()
-                    .add_parent_env_vars()
-                    .build()
-                    .unwrap();
+                let mut envars: HashMap<String, String> = HashMap::new();
+                
+                //cloen envars from the current process
+                for (key, value) in env::vars() {
+                    envars.insert(key, value);
+                }
 
-                let pipeline = ctx
-                    .eval_raw(s.to_str().unwrap(), embed_nu::PipelineData::empty())
-                    .unwrap();
-
-                let result = pipeline.into_value(nu_protocol::Span::unknown()).unwrap();
-
-                let output_string = match result {
-                    nu_protocol::Value::Int { val, .. } => val.to_string(),
-                    nu_protocol::Value::Float { val, .. } => val.to_string(),
-                    nu_protocol::Value::Bool { val, .. } => val.to_string(),
-                    nu_protocol::Value::String { val, .. } => val,
-                    nu_protocol::Value::List { vals, .. } => vals
-                        .into_iter()
-                        .map(|v| v.into_string().unwrap_or("<err>".into()))
-                        .collect::<Vec<_>>()
-                        .join(", "),
-                    other => other.into_string().unwrap_or("<unknown>".into()),
-                };
-
-                Ok(Value::String(NixString::from(output_string)))
+                let evaluated = evaluate_command(
+                    s.to_str().unwrap(),
+                    envars
+                );
+                
+                let as_json = eval_result_to_json(&evaluated);
+                
+                Ok(Value::String(NixString::from(as_json.to_string())))
             }
             _ => Err(ErrorKind::TypeError {
                 expected: "string",

@@ -7,7 +7,7 @@ edition = "2021"
 name = "snix_eval"
 
 [dependencies]
-embed-nu = { git = "https://github.com/Rucadi/embed-nu", package = "embed-nu" }
+nu_json_api_rs = { git = "https://github.com/Rucadi/nu-api-rs", package = "nu_json_api_rs" }
 builtin-macros = { path = "./builtin-macros", package = "snix-eval-builtin-macros" }
 bytes.workspace = true
 bstr = { workspace = true, features = ["serde"] }
@@ -63,6 +63,7 @@ arbitrary = ["proptest", "test-strategy"]
 #
 # This is intended as a stop-gap until we have a garbage collector
 no_leak = []
+
 
 [[bench]]
 name = "eval"
