@@ -1,7 +1,6 @@
 use builtin_macros::builtins;
 use genawaiter::rc::Gen;
 use std::borrow::Cow;
-use nu_json_api_rs::{ evaluate_command, eval_result_to_json};
 
 use std::{
     env,
@@ -101,6 +100,13 @@ mod impure_builtins {
         }
     }
 
+
+    fn from_json_nix_string(json: Value) -> Result<Value, ErrorKind> {
+        let json_str = json.to_str()?;
+        serde_json::from_slice(&json_str).map_err(|err| err.into())
+    }
+
+
     #[builtin("nushell")]
      async fn builtin_nushell(co: GenCo, nuscript: Value) -> Result<Value, ErrorKind> {
         match nuscript {
@@ -111,16 +117,11 @@ mod impure_builtins {
                 for (key, value) in env::vars() {
                     envars.insert(key, value);
                 }
-
-                let evaluated = evaluate_command(
-                    s.to_str().unwrap(),
-                    envars
-                );
                 
-                let as_json = eval_result_to_json(&evaluated);
-                
-                Ok(Value::String(NixString::from(as_json.to_string())))
-            }
+                let serde_val = nu_json_api_rs::evaluate_command(s.to_str().unwrap(), envars);
+                let val: Value = from_json_nix_string(Value::from(serde_val.to_string()))?;
+                Ok(val)
+               }
             _ => Err(ErrorKind::TypeError {
                 expected: "string",
                 actual: "not string",

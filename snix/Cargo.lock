@@ -4139,7 +4139,7 @@ dependencies = [
 [[package]]
 name = "nu_json_api_rs"
 version = "0.1.0"
-source = "git+https://github.com/Rucadi/nu-api-rs#bbe35e831867ae439a35f2ef02424cd612601cab"
+source = "git+https://github.com/Rucadi/nu-api-rs#204df20de546cd687df94c180196873b840e3f1d"
 dependencies = [
  "anyhow",
  "nu-cli",
